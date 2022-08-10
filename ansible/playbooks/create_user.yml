@@ -14,7 +14,7 @@
         state: present
     
     - name: Allow 'wheel' group to have passwordless sudo
-     lineinfile:
+      lineinfile:
         path: /etc/sudoers
         state: present
         regexp: '^%wheel'
