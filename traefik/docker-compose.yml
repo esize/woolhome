@@ -17,11 +17,7 @@ services:
       - 993:993
       - 4190:4190
       - 389:389
-    environment:
-      - CF_API_EMAIL=evan.dayton.sizemore@gmail.com
-      - CF_API_KEY=e3044c198a24417ec43f75c4416b1949833a9
-      # be sure to use the correct one depending on if you are using a token or key
-    volumes:
+   volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /home/evan/traefik/data/traefik.yml:/traefik.yml:ro
