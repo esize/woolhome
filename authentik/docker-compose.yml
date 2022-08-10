@@ -1,0 +1,125 @@
+---
+version: '3.4'
+
+services:
+  postgresql:
+    image: postgres:12-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 5s
+    volumes:
+      - database:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=${PG_PASS:?database password required}
+      - POSTGRES_USER=${PG_USER:-authentik}
+      - POSTGRES_DB=${PG_DB:-authentik}
+    env_file:
+      - .env
+    networks:
+      - proxy
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 3s
+    networks:
+      - proxy
+  server:
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2022.7.2}
+    restart: unless-stopped
+    command: server
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - proxy
+    environment:
+      AUTHENTIK_REDIS__HOST: redis
+      AUTHENTIK_POSTGRESQL__HOST: postgresql
+      AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
+      AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
+      # WORKERS: 2
+    ports:
+      - "0.0.0.0:${AUTHENTIK_PORT_HTTP:-9000}:9000"
+      - "0.0.0.0:${AUTHENTIK_PORT_HTTPS:-9443}:9443"
+    volumes:
+      - ./media:/media
+      - ./custom-templates:/templates
+    env_file:
+      - .env
+    ports:
+      - "0.0.0.0:${AUTHENTIK_PORT_HTTP:-9000}:9000"
+      - "0.0.0.0:${AUTHENTIK_PORT_HTTPS:-9443}:9443"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.authentik.entrypoints=http"
+      - "traefik.http.routers.authentik.rule=Host(`authentik.wool.homes`)"
+      - "traefik.http.middlewares.authentik-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.authentik.middlewares=authentik-https-redirect"
+      - "traefik.http.routers.authentik-secure.entrypoints=https"
+      - "traefik.http.routers.authentik-secure.rule=Host(`authentik.wool.homes`)"
+      - "traefik.http.routers.authentik-secure.tls=true"
+      - "traefik.http.routers.authentik-secure.service=authentik"
+      - "traefik.http.services.authentik.loadbalancer.server.port=9000"
+      - "traefik.docker.network=proxy"
+        # authentik_ldap:
+        #    image: ghcr.io/goauthentik/ldap
+        #    restart: unless-stopped
+        #    networks:
+        #      - internal
+        #    environment:
+        #      AUTHENTIK_HOST: https://authentik.wool.homes
+        #      AUTHENTIK_INSECURE: "true"
+        #      AUTHENTIK_TOKEN: FVCxrGSwHqwcTb4xlUI2TOh1xB1qecoxzC5T1RONqKlUCjKFnfw3j6NNnnD5GKg5xuZ5GCiwmtRayoHtKNM1ONVNb40nh2B4kgtoB3nh5IQV22OAYJyWKQZZ0pkSvY10
+        #      AUTHENTIK_DEBUG: "true"
+        #    labels:
+        #      - "traefik.enable=true"
+        #      - "traefik.tcp.routers.ldap.rule=HostSNI(`*`)"
+        #      - "traefik.tcp.routers.ldap.entrypoints=ldap"
+        #      - "traefik.tcp.routers.ldap.service=ldap"
+        #      - "traefik.tcp.services.ldap.loadbalancer.server.port=3389"
+        #      - "traefik.tcp.services.ldap.loadbalancer.proxyProtocol.version=1"
+        #      - "traefik.docker.network=proxy"
+
+  worker:
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2022.7.2}
+    restart: unless-stopped
+    command: worker
+    environment:
+      AUTHENTIK_REDIS__HOST: redis
+      AUTHENTIK_POSTGRESQL__HOST: postgresql
+      AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
+      AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
+      # AUTHENTIK_ERROR_REPORTING__ENABLED: "true"
+    # This is optional, and can be removed. If you remove this, the following will happen
+    # - The permissions for the /media folders aren't fixed, so make sure they are 1000:1000
+    # - The docker socket can't be accessed anymore
+    user: root
+    volumes:
+      - ./media:/media
+      - ./certs:/certs
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./custom-templates:/templates
+    env_file:
+      - .env
+    networks:
+      - proxy
+  
+
+volumes:
+  database:
+    driver: local
+
+networks:
+  proxy:
+    driver: bridge
+    external: true
