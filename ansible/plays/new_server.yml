@@ -1,0 +1,6 @@
+- import_playbook: updates.yml
+- import_playbook: install_system_packages.yml
+- import_playbook: timezone.yml
+- import_playbook: create_user.yml
+- import_playbook: disable_dynamic_motd.yml
+- import_playbook: install_docker.yml
