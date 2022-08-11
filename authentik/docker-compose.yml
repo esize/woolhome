@@ -33,7 +33,7 @@ services:
     networks:
       - proxy
   server:
-    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2022.7.2}
+    image: ghcr.io/goauthentik/server
     restart: unless-stopped
     command: server
     security_opt:
