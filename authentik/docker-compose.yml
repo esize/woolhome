@@ -6,7 +6,7 @@ services:
     image: postgres:12-alpine
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      test: ['CMD-SHELL', 'pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}']
       start_period: 20s
       interval: 30s
       retries: 5
@@ -25,7 +25,7 @@ services:
     image: redis:alpine
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      test: ['CMD-SHELL', 'redis-cli ping | grep PONG']
       start_period: 20s
       interval: 30s
       retries: 5
@@ -48,28 +48,25 @@ services:
       AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
       # WORKERS: 2
     ports:
-      - "0.0.0.0:${AUTHENTIK_PORT_HTTP:-9000}:9000"
-      - "0.0.0.0:${AUTHENTIK_PORT_HTTPS:-9443}:9443"
+      - '0.0.0.0:${AUTHENTIK_PORT_HTTP:-9000}:9000'
+      - '0.0.0.0:${AUTHENTIK_PORT_HTTPS:-9443}:9443'
     volumes:
       - ./media:/media
       - ./custom-templates:/templates
     env_file:
       - .env
-    ports:
-      - "0.0.0.0:${AUTHENTIK_PORT_HTTP:-9000}:9000"
-      - "0.0.0.0:${AUTHENTIK_PORT_HTTPS:-9443}:9443"
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.authentik.entrypoints=http"
-      - "traefik.http.routers.authentik.rule=Host(`authentik.wool.homes`)"
-      - "traefik.http.middlewares.authentik-https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.routers.authentik.middlewares=authentik-https-redirect"
-      - "traefik.http.routers.authentik-secure.entrypoints=https"
-      - "traefik.http.routers.authentik-secure.rule=Host(`authentik.wool.homes`)"
-      - "traefik.http.routers.authentik-secure.tls=true"
-      - "traefik.http.routers.authentik-secure.service=authentik"
-      - "traefik.http.services.authentik.loadbalancer.server.port=9000"
-      - "traefik.docker.network=proxy"
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.authentik.entrypoints=http'
+      - 'traefik.http.routers.authentik.rule=Host(`authentik.wool.homes`)'
+      - 'traefik.http.middlewares.authentik-https-redirect.redirectscheme.scheme=https'
+      - 'traefik.http.routers.authentik.middlewares=authentik-https-redirect'
+      - 'traefik.http.routers.authentik-secure.entrypoints=https'
+      - 'traefik.http.routers.authentik-secure.rule=Host(`authentik.wool.homes`)'
+      - 'traefik.http.routers.authentik-secure.tls=true'
+      - 'traefik.http.routers.authentik-secure.service=authentik'
+      - 'traefik.http.services.authentik.loadbalancer.server.port=9000'
+      - 'traefik.docker.network=proxy'
         # authentik_ldap:
         #    image: ghcr.io/goauthentik/ldap
         #    restart: unless-stopped
@@ -113,7 +110,6 @@ services:
       - .env
     networks:
       - proxy
-  
 
 volumes:
   database:
