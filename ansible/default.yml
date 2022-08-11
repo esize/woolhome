@@ -1,3 +1,4 @@
 create_user: evan
 copy_local_key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_rsa.pub') }}"
-sys_packages: [ 'curl', 'neovim', 'git', 'ca-certificates', 'gnupg', 'lsb-release']
+sys_packages:
+  ['curl', 'neovim', 'git', 'ca-certificates', 'gnupg', 'lsb-release', 'pwgen']
